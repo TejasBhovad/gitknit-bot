@@ -1,16 +1,45 @@
-# This is a sample Python script.
+from typing import Final
+import os
+from dotenv import load_dotenv
+from discord import Intents, Client, Message
+from responses import get_response
 
-# Press ⌃R to execute it or replace it with your code.
-# Press Double ⇧ to search everywhere for classes, files, tool windows, actions, and settings.
+load_dotenv()
+TOKEN: Final[str] = os.getenv("DISCORD_TOKEN")
 
+intents = Intents.default()
+intents.message_content = True
+client : Client = Client(intents=intents)
 
-def print_hi(name):
-    # Use a breakpoint in the code line below to debug your script.
-    print(f'Hi, {name}')  # Press ⌘F8 to toggle the breakpoint.
+async  def send_message(message:Message,user_message:str)->None:
+    if not user_message:
+        print("Intents not enabled correctly")
+    if is_private:= user_message.startswith('?'):
+        user_message = user_message.replace('?','')
 
+    try:
+        response:str = get_response(user_message)
+        await message.author.send(response) if is_private else await message.channel.send(response)
+    except Exception as e:
+        print(e)
 
-# Press the green button in the gutter to run the script.
+@client.event
+async def on_ready():
+    print(f'{client.user} has connected to Discord!')
+
+@client.event
+async def on_message(message:Message)->None:
+    if message.author == client.user:
+        return
+    username:str = str(message.author.name)
+    user_message:str = message.content
+    channel:str = str(message.channel)
+
+    print(f'{username} in {channel} says: {user_message}')
+    await send_message(message,user_message)
+
+def main()->None:
+    client.run(TOKEN)
+
 if __name__ == '__main__':
-    print_hi('s')
-
-# See PyCharm help at https://www.jetbrains.com/help/pycharm/
+    main()
