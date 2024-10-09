@@ -79,7 +79,23 @@ async def on_message(message: Message) -> None:
 
     await send_message(message, user_message)
 
+@client.event
+async def on_thread_create(thread: Thread) -> None:
+    forum_channel = client.get_channel(int(FORUM_CHANNEL_ID))
+    if thread.parent_id == forum_channel.id:
+        await thread.send(f"Welcome to the new thread: **{thread.name}**! Feel free to discuss here.")
 
+        creator = thread.owner
+        if creator:
+            print(f"New thread created: {thread.name} in {forum_channel.name} by {creator.name} (ID: {creator.id})")
+        else:
+            # If owner is NA then first msg is owner crappy but works(test for bots first tho later ofcourse)
+            async for message in thread.history(limit=1, oldest_first=True):
+                creator = message.author
+                print(f"New thread created: {thread.name} in {forum_channel.name} by {creator.name} (ID: {creator.id})")
+                break
+            else:
+                print(f"New thread created: {thread.name} in {forum_channel.name}, but creator information is unavailable.")
 def main() -> None:
     client.run(TOKEN)
 
