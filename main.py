@@ -4,7 +4,8 @@ from dotenv import load_dotenv
 import discord
 from discord import Intents, Thread, Reaction
 from discord.ext import commands
-
+from discord.ui import Button, View
+from discord import app_commands
 load_dotenv()
 TOKEN: Final[str] = os.getenv("DISCORD_TOKEN")
 FORUM_CHANNEL_ID: Final[str] = os.getenv("FORUM_CHANNEL_ID")
@@ -21,6 +22,7 @@ client = commands.Bot(command_prefix=COMMAND_PREFIX, intents=intents)
 guild_channels: Dict[str, List[str]] = {}
 thread_creators: Dict[int, int] = {}
 
+
 async def get_thread_creator(thread: Thread) -> int:
     if thread.id in thread_creators:
         return thread_creators[thread.id]
@@ -31,6 +33,7 @@ async def get_thread_creator(thread: Thread) -> int:
         return creator.id  # Return the creator's ID
 
     return None  # Return None if no creator found
+
 
 @client.event
 async def on_ready():
@@ -44,6 +47,19 @@ async def on_ready():
 
     # Sync the command tree to register slash commands
     await client.tree.sync()
+
+@client.tree.command(name="push", description="Send a push notification with an optional title and tags.")
+@app_commands.describe(message="The message to send", title="Optional title for the push", tags="Optional tags for the push")
+async def push(interaction: discord.Interaction, message: str, title: str = None, tags: str = None):
+    # Construct the response message
+    response_message = f"**Message:** {message}"
+    if title:
+        response_message += f"\n**Title:** {title}"
+    if tags:
+        response_message += f"\n**Tags:** {tags}"
+
+    # Send the response
+    await interaction.response.send_message(response_message)
 
 @client.tree.command(name="close", description="Close the current thread.")
 async def close_thread(interaction: discord.Interaction):
@@ -65,17 +81,30 @@ async def close_thread(interaction: discord.Interaction):
             await interaction.response.send_message("This thread is already closed or archived.", ephemeral=True)
             return
 
-        # Attempt to close the thread
         await interaction.response.defer(ephemeral=True)
         await thread.send("Closing this thread...")
+
+        # Create a button to link to Google
+        button = Button(label="Go to Google", url="https://www.google.com")
+        view = View()
+        view.add_item(button)
+
+        # Attempt to close the thread
         await thread.edit(locked=True, archived=True)
-        await interaction.followup.send("Thread has been closed and archived.", ephemeral=True)
+
+        # Send a message with the button
+        await interaction.followup.send(
+            "Thread has been closed and archived. You can visit Google using the button below:",
+            view=view,
+            ephemeral=True
+        )
 
     except discord.Forbidden:
         await interaction.followup.send("I don't have permission to close this thread.", ephemeral=True)
     except Exception as e:
         print(f"Error closing thread: {e}")
         await interaction.followup.send("An error occurred while trying to close the thread.", ephemeral=True)
+
 
 @client.event
 async def on_message(message):
@@ -87,6 +116,7 @@ async def on_message(message):
     channel: str = str(message.channel)
 
     print(f'{username} in {channel} says: {user_message}')
+
 
 @client.event
 async def on_thread_create(thread: Thread) -> None:
@@ -105,6 +135,7 @@ async def on_thread_create(thread: Thread) -> None:
 
         except Exception as e:
             print(f"Error sending welcome message or fetching creator: {e}")
+
 
 @client.event
 async def on_reaction_add(reaction: Reaction, user) -> None:
@@ -136,8 +167,10 @@ async def on_reaction_add(reaction: Reaction, user) -> None:
                 except Exception as e:
                     print(f"Error closing or archiving thread: {e}")
 
+
 def main() -> None:
     client.run(TOKEN)
+
 
 if __name__ == '__main__':
     main()
