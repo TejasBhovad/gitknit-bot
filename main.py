@@ -1,3 +1,5 @@
+from db import check_auth
+
 from typing import Final, Dict, List
 import os
 from dotenv import load_dotenv
@@ -60,6 +62,26 @@ async def push(interaction: discord.Interaction, message: str, title: str = None
 
     # Send the response
     await interaction.response.send_message(response_message)
+
+
+@client.tree.command(name="init", description="Initialize logging for the current server.")
+async def init(interaction: discord.Interaction):
+    # Check if the user has admin or manage threads permission
+    if not interaction.user.guild_permissions.administrator and not interaction.user.guild_permissions.manage_threads:
+        await interaction.response.send_message("You do not have permission to use this command.", ephemeral=True)
+        return
+    repoExists = check_auth(str(interaction.guild.id))
+    if not repoExists:
+        await interaction.response.send_message(" Repo doesnt exist.", ephemeral=True)
+        return
+
+    channel_id = interaction.guild.id
+    guild_name = interaction.guild.name
+
+    log_message = f"Initialization complete for {guild_name}.\n Channel ID: {channel_id}"
+
+    await interaction.response.send_message(log_message)
+
 
 @client.tree.command(name="close", description="Close the current thread.")
 async def close_thread(interaction: discord.Interaction):
