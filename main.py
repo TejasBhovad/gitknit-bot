@@ -1,4 +1,4 @@
-from db import check_auth,verify_repository
+from db import check_auth,verify_repository,push_threads
 
 from typing import Final, Dict, List
 import os
@@ -24,6 +24,16 @@ client = commands.Bot(command_prefix=COMMAND_PREFIX, intents=intents)
 guild_channels: Dict[str, List[str]] = {}
 thread_creators: Dict[int, int] = {}
 
+async def read_threads(thread: Thread):
+    messages = []
+    async for message in thread.history(oldest_first=True):
+        message_data = {
+            "content": message.content,
+            "creator": str(message.author),
+            "attachments": [attachment.url for attachment in message.attachments] if message.attachments else []
+        }
+        messages.append(message_data)
+    return messages
 
 async def get_thread_creator(thread: Thread) -> int:
     if thread.id in thread_creators:
@@ -64,8 +74,15 @@ async def push(interaction: discord.Interaction, message: str, title: str = None
     thread_id = interaction.channel.id
     response_message += f"\n**Thread ID:** {thread_id}"
 
+    thread = interaction.channel
+    # Read the messages in the thread
+    messages = await read_threads(thread)
+
     # Send the response
     await interaction.response.send_message(response_message)
+
+    # Call push_threads and await it
+    await push_threads(channel_id=str(interaction.guild.id), title=title, tags=tags, messages=messages, pushed_by=str(interaction.user.id))
 
 
 @client.tree.command(name="verify", description="Verify the repository with a token.")
