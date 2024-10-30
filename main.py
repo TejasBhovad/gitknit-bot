@@ -1,4 +1,4 @@
-from db import check_auth
+from db import check_auth,verify_repository
 
 from typing import Final, Dict, List
 import os
@@ -12,7 +12,7 @@ load_dotenv()
 TOKEN: Final[str] = os.getenv("DISCORD_TOKEN")
 FORUM_CHANNEL_ID: Final[str] = os.getenv("FORUM_CHANNEL_ID")
 COMMAND_PREFIX: Final[str] = os.getenv("COMMAND_PREFIX")
-
+APP_URL: Final[str] = os.getenv("NEXT_APP_URL")
 intents = Intents.default()
 intents.message_content = True
 intents.guilds = True
@@ -60,9 +60,36 @@ async def push(interaction: discord.Interaction, message: str, title: str = None
     if tags:
         response_message += f"\n**Tags:** {tags}"
 
+    # Get the thread ID
+    thread_id = interaction.channel.id
+    response_message += f"\n**Thread ID:** {thread_id}"
+
     # Send the response
     await interaction.response.send_message(response_message)
 
+
+@client.tree.command(name="verify", description="Verify the repository with a token.")
+@app_commands.describe(token="The token to verify the repository")
+async def verify(interaction: discord.Interaction, token: str):
+    if not interaction.user.guild_permissions.administrator and not interaction.user.guild_permissions.manage_threads:
+        await interaction.response.send_message("You do not have permission to use this command.", ephemeral=True)
+        return
+
+    # Log the token and channel ID
+    channel_id = str(interaction.guild.id)
+    print(f"Token: {token}, Channel ID: {channel_id}")
+
+    res = verify_repository(token, channel_id)
+    if res:
+        await interaction.response.send_message(
+            "Repository verified successfully.",
+            ephemeral=True
+        )
+    else:
+        await interaction.response.send_message(
+            "Repository verification failed.",
+            ephemeral=True
+        )
 
 @client.tree.command(name="init", description="Initialize logging for the current server.")
 async def init(interaction: discord.Interaction):
@@ -72,15 +99,16 @@ async def init(interaction: discord.Interaction):
         return
     repoExists = check_auth(str(interaction.guild.id))
     if not repoExists:
-        await interaction.response.send_message(" Repo doesnt exist.", ephemeral=True)
+        await interaction.response.send_message(
+            f"Repo doesn't exist.\nVisit {APP_URL}/init?channelId={interaction.guild.id}",
+            ephemeral=True
+        )
         return
-
-    channel_id = interaction.guild.id
-    guild_name = interaction.guild.name
-
-    log_message = f"Initialization complete for {guild_name}.\n Channel ID: {channel_id}"
-
-    await interaction.response.send_message(log_message)
+    # guild_name = interaction.guild.name
+    #
+    # log_message = f"Initialization complete for {guild_name}.\n Channel ID: {channel_id}"
+    #
+    # await interaction.response.send_message(log_message)
 
 
 @client.tree.command(name="close", description="Close the current thread.")

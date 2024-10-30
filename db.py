@@ -34,11 +34,38 @@ def check_auth(channel_id: str):
 
     print(result)  # For debugging purposes
 
-    # Check if the channel_id exists in any of the documents
+    # Check if the channel_id exists in any of the documents and if verified is true
     for document in result['documents']:
-        if document.get('channel_id') == channel_id:
-            print(f"Channel ID {channel_id} found in database.")
+        if document.get('channel_id') == channel_id and document.get('verified') is True:
+            print(f"Channel ID {channel_id} found and verified in database.")
             return True
 
-    print(f"Channel ID {channel_id} not found in database.")
+    print(f"Channel ID {channel_id} not found or not verified in database.")
     return False
+
+
+def verify_repository(repository_id:str,channel_id:str):
+    database = Databases(client)
+    result = database.update_document(
+        database_id=DATABASE_ID,
+        collection_id=REPOSITORY_ID,
+        document_id=repository_id,
+        data={
+            "verified": True,
+            "channel_id": channel_id
+        }
+    )
+
+    print(result)  # For debugging purposes
+
+    if result['$id'] == repository_id:
+        print(f"Repository ID {repository_id} verified successfully.")
+        return True
+    else:
+        print(f"Failed to verify repository ID {repository_id}.")
+        return False
+
+
+    def push_threads(channel_id:str,title:str = None, tags:str = None,thread_id:str = None):
+        print("Pushing threads")
+        # print all the threads in the channel
