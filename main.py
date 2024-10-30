@@ -161,19 +161,19 @@ async def close_thread(interaction: discord.Interaction):
 
         await interaction.response.defer(ephemeral=True)
         await thread.send("Closing this thread...")
-
-        # Create a button to link to Google
-        button = Button(label="Go to Google", url="https://www.google.com")
-        view = View()
-        view.add_item(button)
+        #
+        # # Create a button to link to Google
+        # button = Button(label="Go to Google", url="https://www.google.com")
+        # view = View()
+        # view.add_item(button)
 
         # Attempt to close the thread
         await thread.edit(locked=True, archived=True)
 
         # Send a message with the button
         await interaction.followup.send(
-            "Thread has been closed and archived. You can visit Google using the button below:",
-            view=view,
+            "Thread has been closed and archived.",
+            # view=view,
             ephemeral=True
         )
 
