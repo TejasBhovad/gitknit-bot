@@ -88,7 +88,9 @@ async def push(interaction: discord.Interaction, message: str, title: str = None
     messages = await read_threads(thread)
 
     # Send the response
-    await interaction.response.send_message(response_message)
+    await interaction.response.send_message(
+        f"Pushed the thread to GitKnit. Check the Dashboard for more details.",
+    )
 
     # Call push_threads and await it
     await push_threads(channel_id=str(interaction.guild.id), title=title, tags=tags, messages=messages, pushed_by=str(interaction.user.id))
@@ -126,7 +128,7 @@ async def init(interaction: discord.Interaction):
     repoExists = check_auth(str(interaction.guild.id))
     if not repoExists:
         await interaction.response.send_message(
-            f"Repo doesn't exist.\nVisit {APP_URL}/init?channelId={interaction.guild.id}",
+            f"Visit {APP_URL}/init?channelId={interaction.guild.id}",
             ephemeral=True
         )
         return
