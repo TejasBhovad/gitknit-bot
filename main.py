@@ -63,12 +63,21 @@ async def on_ready():
 @client.tree.command(name="push", description="Send a push notification with an optional title and tags.")
 @app_commands.describe(message="The message to send", title="Optional title for the push", tags="Optional tags for the push")
 async def push(interaction: discord.Interaction, message: str, title: str = None, tags: str = None):
+    if not interaction.user.guild_permissions.administrator and not interaction.user.guild_permissions.manage_threads:
+        await interaction.response.send_message("You do not have permission to use this command.", ephemeral=True)
+        return
+    if(check_auth(str(interaction.guild.id))==False):
+        await interaction.response.send_message(
+            f"Repo doesn't exist.\nVisit {APP_URL}/init?channelId={interaction.guild.id}",
+            ephemeral=True
+        )
+        return
     # Construct the response message
     response_message = f"**Message:** {message}"
     if title:
         response_message += f"\n**Title:** {title}"
-    if tags:
-        response_message += f"\n**Tags:** {tags}"
+    # if tags:
+    #     response_message += f"\n**Tags:** {tags}"
 
     # Get the thread ID
     thread_id = interaction.channel.id
