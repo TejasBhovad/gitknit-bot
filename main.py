@@ -247,8 +247,9 @@ async def on_reaction_add(reaction: Reaction, user) -> None:
 
 
 def main() -> None:
-    client.run(TOKEN)
     webserver.keep_alive()
+    client.run(TOKEN)
+
 
 
 if __name__ == '__main__':
