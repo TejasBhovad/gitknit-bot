@@ -1,5 +1,5 @@
 from db import check_auth,verify_repository,push_threads
-
+import webserver
 from typing import Final, Dict, List
 import os
 from dotenv import load_dotenv
@@ -248,6 +248,7 @@ async def on_reaction_add(reaction: Reaction, user) -> None:
 
 def main() -> None:
     client.run(TOKEN)
+    webserver.keep_alive()
 
 
 if __name__ == '__main__':
